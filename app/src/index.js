@@ -36,10 +36,7 @@ const DEFAULT_CAMERA_ROT = '{"isEuler":true,"_x":-0.4890319918221778,"_y":0.0299
 const DEFAULT_CAMERA_POS =  '{"x":0.3966156804487375,"y":8.240668844853648,"z":16.11327172278412}';
 const DEFAULT_CONTROLS_TARGET = '{"x":-1.8977369150584633,"y":-27.789645896127855,"z":-51.59438146811678}';
 
-
-
-
-
+const clubModel = 'assets/models/xoyo-club.glb'
 
 let stats
 let RAPIER
@@ -613,6 +610,10 @@ function initTerrain() {
 
 let hlsStreams = [
 
+
+
+
+    {name:"test", url:'https://172.20.10.7:3000/stream.m3u8' },
     {name:"local1", url:'assets/video/prog_index.m3u8' },
     {name: "bigBuckBunny", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"},
     {name: "appleBipbop", url: "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8"},
@@ -636,7 +637,7 @@ window.hlsStreams = hlsStreams;
 
 let sceneConfig = [
     {texture: "Floor", videoTextureSrc: "angelOne"},
-    {texture: "SmallScreen", videoTextureSrc: "local1"},
+    {texture: "SmallScreen", videoTextureSrc: "test"},
     {texture: "BigScreen", videoTextureSrc: "bigBuckBunny"},
     {texture: "MegaScreen", videoTextureSrc: "sampleElephantsDream"}
 ];
@@ -793,7 +794,7 @@ function addClub() {
     
     loader.setDRACOLoader(dracoLoader);
     
-    loader.load('assets/models/xoyo-club.glb', gltf => {
+    loader.load(clubModel, gltf => {
         let mesh = gltf.scene
         mesh.name = "PAD"
         scene.add(mesh);
