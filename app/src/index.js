@@ -35,6 +35,11 @@ const DEFAULT_CAMERA_POS =  '{"x":0.3966156804487375,"y":8.240668844853648,"z":1
 const DEFAULT_CONTROLS_TARGET = '{"x":-1.8977369150584633,"y":-27.789645896127855,"z":-51.59438146811678}';
 
 
+
+
+
+
+
 let RAPIER
 let camera
 let scene
@@ -199,6 +204,10 @@ function initSky() {
   gui.add( effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged );
 
   guiChanged();
+
+    gui.close();
+    // window.gui = gui;
+
 
 }
 
@@ -557,9 +566,11 @@ function initShooting() {
     // if (event.key.match(/^\d$/)) {  // Check if the key is a single digit
     //     iterateCameraData(event.key)
     // }
+
       if (event.keyCode === 32) {
-        shootBall()
+        //shootBall()
       }
+
       // if (event.keyCode === 86) {
       //   dropSomething()
       // }
@@ -584,103 +595,134 @@ function initTerrain() {
 
   addModel("assets/models/terrain2.glb", "terrain", {x:0,y:-150,z:0})
   
-
   // let skyboxPath = "assets/images/skybox/3k/";    
   // scene.background = loadSkyboxTexture(skyboxPath,"png");
 
-
 }
 
-/* video streaming - hls */
 
+let hlsStreams = [
 
-let videoTexture, videoMaterial, video, hls
+    {name:"local1", url:'assets/video/prog_index.m3u8' },
+    {name: "bigBuckBunny", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"},
+    {name: "appleBipbop", url: "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8"},
+    {name: "bbbTest", url: "https://test-streams.mux.dev/test_001/stream.m3u8"},
+    {name: "sampleElephantsDream", url: "https://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"},
+    {name: "sampleBigBuckBunny", url: "https://sample.vodobox.net/big_buck_bunny_4k/big_buck_bunny_4k.m3u8"},
+    {name: "testPattern", url: "https://test-streams.mux.dev/pts_shift/master.m3u8"},
+    {name: "demoNginx", url: "http://demo.unified-streaming.com/video/ateam/ateam.ism/ateam.m3u8"},
+    {name: "angelOne", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8"},
+    {name: "angelTwo", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_ts/master.m3u8"},
+    {name: "hlsVariantAudio", url: "https://devstreaming-cdn.apple.com/videos/streaming/examples/bipbop_adv_example_hevc/master.m3u8"},
+    {name: "sampleCosmosLaundromat", url: "https://sample.vodobox.net/cosmos_laundromat/cosmos_laundromat.m3u8"},
+    {name: "sampleSitaSingsTheBlues", url: "https://sample.vodobox.net/sita_sings_the_blues/sita_sings_the_blues.m3u8"},
+    {name: "sampleElephantsDream", url: "https://sample.vodobox.net/elephants_dream/elephants_dream.m3u8"},
+    {name: "sampleOcean", url: "https://sample.vodobox.net/ocean/ocean.m3u8"},
+    {name: "sampleBigBuckBunnyAlt", url: "https://sample.vodobox.net/big_buck_bunny/big_buck_bunny.m3u8"},
+    {name: "sampleSkatePhantomFlex4k", url: "https://sample.vodobox.net/skate_phantom_flex_4k/skate_phantom_flex_4k.m3u8"}
+];
 
-function updateVideo() {
+window.hlsStreams = hlsStreams;
 
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        videoTexture.needsUpdate = true;
+let sceneConfig = [
+    {texture: "Floor", videoTextureSrc: "angelOne"},
+    {texture: "SmallScreen", videoTextureSrc: "local1"},
+    {texture: "BigScreen", videoTextureSrc: "bigBuckBunny"},
+    {texture: "MegaScreen", videoTextureSrc: "sampleElephantsDream"}
+];
+
+const streamName = (name) => hlsStreams.find(stream => stream.name === name)?.url;
+const fallbackUrl = streamName("local1");
+
+function getStreamParameter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const streamUrl = urlParams.get('stream');
+    if (!streamUrl) return fallbackUrl;
+    try {
+        new URL(streamUrl);
+        if (/\.m3u8$/.test(streamUrl)) return streamUrl;
+    } catch (_) {
+        return fallbackUrl;
     }
-
-
+    return fallbackUrl;
 }
+window.getStreamParameter = getStreamParameter;
 
+let videoTexture = {};
+let videoMaterial = {};
+let video = {};
+let hls = {};
 
-
-function setupVideo() {
-
-    video = document.createElement('video');
-
-    // Set some basic properties for the video element
-    video.width = 640;  // adjust as needed
-    video.height = 360; // adjust as needed
-    video.controls = true; // show video player controls
-    video.autoplay = true; // auto-start the video
-    video.loop = true;
-
-    document.body.appendChild(video); // attach the video element to the body
-
-    // Check if HLS is supported natively or if hls.js should be used
-    if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = 'assets/video/prog_index.m3u8'; // replace with your HLS URL
-
+function setupVideoForMesh(meshName) {
+    const stream = streamName(sceneConfig.find(conf => conf.texture === meshName).videoTextureSrc);
+    
+    if (!stream) {
+        console.error(`No stream found for meshName: ${meshName}`);
+        return;
+    }
+    
+    video[meshName] = document.createElement('video');
+    video[meshName].width = 640;
+    video[meshName].height = 360;
+    video[meshName].controls = true;
+    video[meshName].autoplay = true;
+    video[meshName].loop = true;
+    document.body.appendChild(video[meshName]);
+    
+    if (video[meshName].canPlayType('application/vnd.apple.mpegurl')) {
+        video[meshName].src = stream;
     } else if (Hls.isSupported()) {
-
-        hls = new Hls();
-        hls.loadSource('assets/video/prog_index.m3u8'); // replace with your HLS URL
-        hls.attachMedia(video);
-
+        hls[meshName] = new Hls();
+        hls[meshName].loadSource(stream);
+        hls[meshName].attachMedia(video[meshName]);
     } else {
         console.error('HLS is not supported on this platform!');
     }
-
-    videoTexture = new THREE.VideoTexture(video);
-    videoMaterial = new THREE.MeshBasicMaterial({ map: videoTexture, side: THREE.DoubleSide });
-
-
-    document.addEventListener('keydown', function(event) {
-        if (event.keyCode === 32 && event.target === document.body) {
-            event.preventDefault();
-        }
-    });
-
-
-    // Function to play the video
-    function tryPlayVideo() {
-        if (video.paused) {
-            video.play().catch(error => {
-                // Handle the error if needed
-                console.error('Video play failed:', error);
-            });
-        }
-    }
-
-    // Attach event listeners to various user activities
-    document.addEventListener('click', tryPlayVideo);
-    document.addEventListener('touchstart', tryPlayVideo);
-    document.addEventListener('keydown', tryPlayVideo);
-
-    // Optionally: Once the video starts playing, you might want to remove these listeners
-    video.addEventListener('play', () => {
+    
+    videoTexture[meshName] = new THREE.VideoTexture(video[meshName]);
+    videoMaterial[meshName] = new THREE.MeshBasicMaterial({ map: videoTexture[meshName], side: THREE.DoubleSide });
+    video[meshName].addEventListener('play', () => {
         document.removeEventListener('click', tryPlayVideo);
         document.removeEventListener('touchstart', tryPlayVideo);
         document.removeEventListener('keydown', tryPlayVideo);
-    });    
-
-
-
+    });
+    
+    function tryPlayVideo() {
+        if (video[meshName].paused) video[meshName].play().catch(error => console.error('Video play failed:', error));
+    }
+    
+    document.addEventListener('click', tryPlayVideo);
+    document.addEventListener('touchstart', tryPlayVideo);
+    document.addEventListener('keydown', tryPlayVideo);
 }
 
+function updateVideos() {
+    for (let configItem of sceneConfig) {
+        let meshName = configItem.texture;
+        if (video[meshName] && video[meshName].readyState === video[meshName].HAVE_ENOUGH_DATA) videoTexture[meshName].needsUpdate = true;
+    }
+}
 
-window.video = video;
-window.hls = hls
+function applyMaterialToMeshes(node, material) {
+    if (node.isMesh) node.material = material;
+    else if (node.isGroup) node.children.forEach(child => applyMaterialToMeshes(child, material));
+}
 
+function setupVideoTexturesForGLTFItem(item) {
+
+    if(!item.isMesh) return
+
+    const configItem = sceneConfig.find(conf => conf.texture === item.name);
+    if (configItem) {
+        setupVideoForMesh(configItem.texture);
+        applyMaterialToMeshes(item, videoMaterial[configItem.texture]);
+    }
+}
 
 
 
 
 /* Scene */
-
 
 function initScene() {
 
@@ -688,7 +730,7 @@ function initScene() {
 
   addScene();
 
-  setupVideo();
+  //setupVideo();
 
   //loadTextures();
 
@@ -698,7 +740,7 @@ function initScene() {
 
   dumpMachine();
 
-  //initShooting();
+  initShooting();
 
   initSky();
 
@@ -713,13 +755,7 @@ function initScene() {
 
 
 
-function applyMaterialToMeshes(node, material) {
-    if (node.isMesh) {
-        node.material = material;
-    } else if (node.isGroup) {
-        node.children.forEach(child => applyMaterialToMeshes(child, material));
-    }
-}
+
 
 // gltf.scene.traverse(node => {
 //     if (node.name === "Floor" || node.name === "Screen") {
@@ -732,43 +768,30 @@ function applyMaterialToMeshes(node, material) {
 function addClub() {
 
     console.log("addClub");
-
-
+    
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath('draco_decoder/');
+    
     const loader = new GLTFLoader();
+    
     loader.setDRACOLoader(dracoLoader);
-
+    
     loader.load('assets/models/xoyo-club.glb', gltf => {
         let mesh = gltf.scene
         mesh.name = "PAD"
         scene.add(mesh);
 
-
         if (gltf.animations && gltf.animations.length > 0) {
             console.log("gltf.animations",gltf.animations)
             mixer = new THREE.AnimationMixer(mesh);
-            
             // Playing all animations
             for (let i = 0; i < gltf.animations.length; i++) {
                 mixer.clipAction(gltf.animations[i]).play();
             }
-        }          
+        }
 
-        
         gltf.scene.traverse(item => {
 
-
-            if (item.name === "Floor" || item.name === "Screen" || item.name === "BigScreen" || item.name === "MegaScreen") {
-                applyMaterialToMeshes(item, videoMaterial);
-            }
-
-            // /* add lamps for animation */
-            // if (/^Lamp\d+$/.test(String(item.name))) {
-            //   console.log("+ Lamp added:", item.name)
-            //   lamps.push(item);
-            // }
-          
           if ((/^Lamp(\d*)$/).test(item.name) && item.isGroup && item.children[1] && item.children[1].material) {
               item.children[0].material.transparent = true;
               item.children[0].material.opacity = 0;
@@ -779,84 +802,51 @@ function addClub() {
               console.log("+ Lamp added:", item.name)
           }
 
-
-                // if(item.name == "Floor") {
-
-                //     //item.children[0].material = videoMaterial;
-                //     console.log(item.name, item)
-                //     item.material = videoMaterial
-
-                //     for(let child in item) {
-                //         //item[child].material = videoMaterial
-                //         console.log(item.material)
-
-                //         item.material = videoMaterial
-                //     }
-
-
-                    
-                // }
-
-
-
-            if (item.isMesh) {
+        if (item.isMesh) {
 
                 console.log("isMesh:", item.name)
-
-                if(item.name == "Screen") {
-
-                    //item.children[0].material = videoMaterial;
-                    console.log(item.name, item)
-                    item.material = videoMaterial
-                }
-
-
-
-
-
-
-
+            
+                setupVideoTexturesForGLTFItem(item)
+            
                 const geometry = item.geometry;
-
                 item.castShadow = true;     // allows the node to cast shadows
                 item.receiveShadow = true;                 
-              
+            
                 // you can swap material for refractions
                 // item.material = new THREE.MeshPhongMaterial({ 
                 //     transparent: true,  opacity: 0.1, 
                 //     color: 0xFFFFFF
                 //     //color: 0xFFFFFF, envMap: envMap1, refractionRatio: 0.98, reflectivity: 0.98
                 // });
-              
                 //console.log(geometry)
+
                 const vertices = geometry.attributes.position.array;
                 const indices = geometry.index.array;
                 const trimesh = new RAPIER.TriMesh(vertices, indices);
                 // console.log('TriMesh created successfully', trimesh);
                 // console.log('Vertices length:', vertices.length);
                 // console.log('Indices length:', indices.length);
+
                 let groundColliderDesc = RAPIER.ColliderDesc.trimesh(trimesh)
                     .setDensity(100)
                     .setTranslation(0, groundHeight, 0)
                     .setActiveEvents(RAPIER.ActiveEvents.COLLISION_EVENTS);
                 // this part is a kind of hack...
+
                 groundColliderDesc.shape.indices = indices;
                 groundColliderDesc.shape.vertices = vertices;
-                let groundCollider = world.createCollider(groundColliderDesc);
 
+                let groundCollider = world.createCollider(groundColliderDesc);
                 window.groundColliderHandle = groundCollider.handle;
                 window.myRapierWorld = world;
                 window.eventQueue = eventQueue;
 
-
-
-
             }
+        
+
         })
 
     })
-
-
 }
 
 
@@ -1169,7 +1159,11 @@ function addBallFromCamera(radius, color, offsetY = 0.2, density = 1) {
                           .setTranslation(cameraPosition.x, cameraPosition.y, cameraPosition.z)
                           .setLinvel(cameraDirection.x * speedFactor, cameraDirection.y * speedFactor, cameraDirection.z * speedFactor);
     let rigidBody = myRapierWorld.createRigidBody(rigidBodyDesc);
-    let texture = texturesCache[Math.floor(Math.random() * texturesCache.length)].texture;
+    
+    //let texture = texturesCache[Math.floor(Math.random() * texturesCache.length)].texture;
+    
+    let texture = videoTexture;
+
       // Sphere Core
       const sphereGeometry = new THREE.SphereGeometry(radius,16,12);
       //const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
@@ -1206,6 +1200,8 @@ function shootBallFromTop(ballBaseSize = 0.2, randmFactor = 0.005) {
 }
 window.shootBallFromTop = shootBallFromTop;
 
+
+
 function shootBall() {
 
     console.log("shootBall - Spacebar released!");
@@ -1219,8 +1215,10 @@ function shootBall() {
     //addBallFromShotLineEnd(ballSize, colorsSet[Math.floor(Math.random()*colorsSet.length)], 0.1, 1)
     //au.playAudioFromFile(au.findSounds(audioData, "kick2")[0])
 }
-
 window.shootBall = shootBall;
+
+
+
 
 
 
@@ -1236,7 +1234,7 @@ function dumpMachine() {
   setInterval(()=> {
     let s = 0.1 + Math.random()*2
      shootBallFromTop(s);
-  }, 500)
+  }, 1500)
 
 }
 
@@ -1385,15 +1383,18 @@ function render(timeStamp, xrFrame) {
 
     updateRapier();
 
-    updateVideo();
+    //updateVideo();
+    updateVideos();
 
     updateLamps();
 
     updateMixer()
 
-
-
-    renderer.render(scene, camera);
+    try {
+       renderer.render(scene, camera);
+    } catch (error) {
+       console.error("Error rendering:", error);
+    }
 
 }
 
