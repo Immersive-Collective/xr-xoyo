@@ -731,10 +731,7 @@ function setupVideoForMesh(meshName) {
 
 }
 
-<<<<<<< HEAD
 
-=======
->>>>>>> e5761f2c9c99355d5ffa1e3a4de5e86f0b457ef9
 function videoGui() {
 
     const gui = new GUI({ autoPlace: false });
