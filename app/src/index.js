@@ -733,7 +733,6 @@ function setupVideoForMesh(meshName) {
 }
 
 
-
 function videoGui() {
 
     const gui = new GUI({ autoPlace: false });
@@ -748,11 +747,17 @@ function videoGui() {
     hlsStreams.forEach(stream => {
         guiState[stream.name] = stream.url;
     });
+
     sceneConfig.forEach(config => {
+
         guiState[config.texture] = config.videoTextureSrc;
+
         gui.add(guiState, config.texture, Object.keys(guiState))
+
             .onChange(function(newValue) {
+                
                 console.log("Selected texture:", config.texture, "Selected video:", newValue);
+                
                 // Update the videoTextureSrc in the sceneConfig
                 let configItem = sceneConfig.find(conf => conf.texture === config.texture);
                 if (configItem) {
@@ -761,6 +766,7 @@ function videoGui() {
                 // Setup the new video for the mesh
                 setupVideoForMesh(config.texture);
                 // Get the GLTF object from the scene
+
                 let gltf = scene.getObjectByName("PAD");
                 if (gltf) {
                     gltf.traverse(item => {
@@ -771,8 +777,11 @@ function videoGui() {
                 } else {
                     console.warn("Couldn't find 'PAD' object in the scene.");
                 }
+
             });
+
     });
+
     // The dummy object and save function
     const dataSaver = {
         save: function() {
@@ -785,6 +794,7 @@ function videoGui() {
             a.click();
         }
     };
+
     // Add the save function to the GUI
     gui.add(dataSaver, 'save').name('Save SceneConfig');
     // Dummy object and load function
@@ -817,14 +827,29 @@ function videoGuiLoader() {
             reader.onload = function(e) {
                 const loadedData = JSON.parse(e.target.result);
                 if (Array.isArray(loadedData)) {
+
                     sceneConfig.length = 0;
+                    
                     Array.prototype.push.apply(sceneConfig, loadedData);
 
+                    sceneConfig = loadedData;
+                    sceneConfig.forEach(config => {
+
+                       let gltf = scene.getObjectByName("PAD");
+                        if (gltf) {
+                            gltf.traverse(item => {
+                                if (item.isMesh && item.name === config.texture) {
+                                    setupVideoTexturesForGLTFItem(item)
+                                }
+                            });
+                        } else {
+                            console.warn("Couldn't find 'PAD' object in the scene.");
+                        }
+                    });
+
                     // Refresh the GUI
-                    //refreshGUI();
                     document.getElementById("videoGui").remove();
                     videoGui();
-
 
                 } else {
                     console.error("Invalid JSON format.");
