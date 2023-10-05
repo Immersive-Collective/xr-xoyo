@@ -642,7 +642,11 @@ let sceneConfig = [
     {texture: "Floor", videoTextureSrc: "apple_2"},
     {texture: "SmallScreen", videoTextureSrc: "apple_1"},
     {texture: "BigScreen", videoTextureSrc: "apple_4"},
-    {texture: "MegaScreen", videoTextureSrc: "apple_3"}
+    {texture: "StageCeiling_1152", videoTextureSrc: "apple_3"},
+    {texture: "StageSmall1_512", videoTextureSrc: "apple_5"},
+    {texture: "StageSmall2_512", videoTextureSrc: "apple_1"},
+    {texture: "StageSmall3_512", videoTextureSrc: "apple_6"},
+    {texture: "MegaScreen", videoTextureSrc: "apple_6"}
 ];
 
 const streamName = (name) => hlsStreams.find(stream => stream.name === name)?.url;
