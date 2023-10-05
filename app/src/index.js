@@ -781,6 +781,22 @@ function videoGui() {
 
     });
 
+    const control = {
+        syncVideos: function () {
+          Object.keys(video).forEach(meshName => {
+            if (video[meshName]) {
+              video[meshName].currentTime = 0;
+              video[meshName].play();
+            }
+          });
+        },
+      };
+      
+      // Add to dat.GUI
+      gui.add(control, 'syncVideos').name('Sync/Reset Videos');
+      
+
+
     // The dummy object and save function
     const dataSaver = {
         save: function() {
