@@ -3,6 +3,8 @@ import * as THREE from 'three';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
+import Stats from 'three/addons/libs/stats.module.js';
+
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -39,7 +41,7 @@ const DEFAULT_CONTROLS_TARGET = '{"x":-1.8977369150584633,"y":-27.78964589612785
 
 
 
-
+let stats
 let RAPIER
 let camera
 let scene
@@ -552,6 +554,14 @@ function addScene() {
   light.shadow.mapSize.set(256*10,256*10);
 
 
+    stats = new Stats();
+    stats.dom.id = "myStats"  
+    document.body.appendChild(stats.domElement);
+    let myStats = document.getElementById("myStats");
+
+    document.getElementById("myStats").setAttribute("style", "position: fixed; bottom: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;")
+
+
 
 }
 
@@ -719,6 +729,13 @@ function setupVideoTexturesForGLTFItem(item) {
     }
 }
 
+function updateStats() {
+
+    if(stats) {
+        stats.update()
+    }
+
+}
 
 
 
@@ -1380,6 +1397,8 @@ function render(timeStamp, xrFrame) {
     //         handyWorkUpdate(hands, xrRefSpace, xrFrame, poseDetected);
     //     }
     // }
+
+    updateStats()
 
     updateRapier();
 
