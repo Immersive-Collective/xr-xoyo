@@ -36,8 +36,9 @@ const DEFAULT_CAMERA_ROT = '{"isEuler":true,"_x":-0.4890319918221778,"_y":0.0299
 const DEFAULT_CAMERA_POS =  '{"x":0.3966156804487375,"y":8.240668844853648,"z":16.11327172278412}';
 const DEFAULT_CONTROLS_TARGET = '{"x":-1.8977369150584633,"y":-27.789645896127855,"z":-51.59438146811678}';
 
-const clubModel = 'assets/models/xoyo-club.glb'
+const clubModel = 'assets/models/xoyo-club_v2.glb'
 
+let gui
 let stats
 let RAPIER
 let camera
@@ -192,7 +193,8 @@ function initSky() {
     localStorage.setItem('skyParameters', JSON.stringify(effectController));
   }
 
-  const gui = new GUI();
+  gui = new GUI();
+
 
   gui.add( effectController, 'turbidity', 0.0, 20.0, 0.1 ).onChange( guiChanged );
   gui.add( effectController, 'rayleigh', 0.0, 4, 0.001 ).onChange( guiChanged );
@@ -202,13 +204,34 @@ function initSky() {
   gui.add( effectController, 'azimuth', - 180, 180, 0.1 ).onChange( guiChanged );
   gui.add( effectController, 'exposure', 0, 1, 0.0001 ).onChange( guiChanged );
 
+
+// nested controllers
+// const folder = gui.addFolder( 'Position' );
+// folder.add( obj, 'x' );
+// folder.add( obj, 'y' );
+// folder.add( obj, 'z' );  
+
+// let obj = {
+//     myBoolean: true,
+//     myString: 'lil-gui',
+//     myNumber: 1,
+//     myFunction: function() { alert( 'hi' ) }
+// }
+
+// gui.add( obj, 'myBoolean' );    // checkbox
+// gui.add( obj, 'myString' );     // text field
+// gui.add( obj, 'myNumber' );     // number field
+// gui.add( obj, 'myFunction' );   // button
+
+
   guiChanged();
 
-    gui.close();
+  gui.close();
     // window.gui = gui;
 
 
 }
+
 
 
 
@@ -436,13 +459,6 @@ async function addEyeDropper() {
 }
 
 window.addEyeDropper = addEyeDropper;
-
-
-window.addEyeDropper = addEyeDropper;
-
-
-
-
 
 
 function addScene() {
@@ -675,6 +691,7 @@ let video = {};
 let hls = {};
 
 function setupVideoForMesh(meshName) {
+
     const stream = streamName(sceneConfig.find(conf => conf.texture === meshName).videoTextureSrc);
     
     if (!stream) {
@@ -715,7 +732,119 @@ function setupVideoForMesh(meshName) {
     document.addEventListener('click', tryPlayVideo);
     document.addEventListener('touchstart', tryPlayVideo);
     document.addEventListener('keydown', tryPlayVideo);
+
 }
+
+
+
+function videoGui() {
+
+    const gui = new GUI({ autoPlace: false });
+    gui.domElement.id = "videoGui";
+
+    document.body.appendChild(gui.domElement);
+
+    gui.domElement.style.position = 'fixed';
+    gui.domElement.style.bottom = '0px';
+    gui.domElement.style.right = '0px';
+    const guiState = {};
+    hlsStreams.forEach(stream => {
+        guiState[stream.name] = stream.url;
+    });
+    sceneConfig.forEach(config => {
+        guiState[config.texture] = config.videoTextureSrc;
+        gui.add(guiState, config.texture, Object.keys(guiState))
+            .onChange(function(newValue) {
+                console.log("Selected texture:", config.texture, "Selected video:", newValue);
+                // Update the videoTextureSrc in the sceneConfig
+                let configItem = sceneConfig.find(conf => conf.texture === config.texture);
+                if (configItem) {
+                    configItem.videoTextureSrc = newValue;
+                }
+                // Setup the new video for the mesh
+                setupVideoForMesh(config.texture);
+                // Get the GLTF object from the scene
+                let gltf = scene.getObjectByName("PAD");
+                if (gltf) {
+                    gltf.traverse(item => {
+                        if (item.isMesh && item.name === config.texture) {
+                            applyMaterialToMeshes(item, videoMaterial[config.texture]);
+                        }
+                    });
+                } else {
+                    console.warn("Couldn't find 'PAD' object in the scene.");
+                }
+            });
+    });
+    // The dummy object and save function
+    const dataSaver = {
+        save: function() {
+            const data = JSON.stringify(sceneConfig, null, 2);
+            const blob = new Blob([data], { type: 'text/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sceneConfig.json';
+            a.click();
+        }
+    };
+    // Add the save function to the GUI
+    gui.add(dataSaver, 'save').name('Save SceneConfig');
+    // Dummy object and load function
+    const dataLoader = {
+        load: function() {
+            fileInput.click(); // trigger the hidden file input's click event
+        }
+    };
+
+    // Add the load function to the GUI
+    gui.add(dataLoader, 'load').name('Load SceneConfig');
+
+}
+
+let fileInput;
+
+function videoGuiLoader() {
+
+    // Create a hidden file input to handle file selection
+    fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json'; // only allow .json files
+    fileInput.style.display = 'none';
+    document.body.appendChild(fileInput);
+
+    fileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const loadedData = JSON.parse(e.target.result);
+                if (Array.isArray(loadedData)) {
+                    sceneConfig.length = 0;
+                    Array.prototype.push.apply(sceneConfig, loadedData);
+
+                    // Refresh the GUI
+                    //refreshGUI();
+                    document.getElementById("videoGui").remove();
+                    videoGui();
+
+
+                } else {
+                    console.error("Invalid JSON format.");
+                }
+            };
+            reader.onerror = function(error) {
+                console.error("Error reading the JSON file:", error);
+            };
+            reader.readAsText(file);
+        }
+    });
+
+
+}
+
+
+
 
 function updateVideos() {
     for (let configItem of sceneConfig) {
@@ -750,6 +879,7 @@ function updateStats() {
 
 
 
+
 /* Scene */
 
 function initScene() {
@@ -775,6 +905,9 @@ function initScene() {
   //initTerrain();
 
   cleanBalls();
+
+  videoGui();
+  videoGuiLoader();
 
   window.addEventListener('resize', onWindowResize, false);
 
@@ -835,6 +968,8 @@ function addClub() {
                 console.log("isMesh:", item.name)
             
                 setupVideoTexturesForGLTFItem(item)
+
+
             
                 const geometry = item.geometry;
                 item.castShadow = true;     // allows the node to cast shadows
