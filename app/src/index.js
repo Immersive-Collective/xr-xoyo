@@ -612,7 +612,13 @@ function initTerrain() {
 
 
 let hlsStreams = [
-
+    
+    {name:"apple_1", url:'assets/video/Apple/Apple_1/prog_index.m3u8' }, /// added folders for each video 
+    {name:"apple_2", url:'assets/video/Apple/Apple_2/prog_index.m3u8' },
+    {name:"apple_3", url:'assets/video/Apple/Apple_3/prog_index.m3u8' },
+    {name:"apple_4", url:'assets/video/Apple/Apple_4/prog_index.m3u8' },
+    {name:"apple_5", url:'assets/video/Apple/Apple_5/prog_index.m3u8' },
+    {name:"apple_6", url:'assets/video/Apple/Apple_6/prog_index.m3u8' },
     {name:"local1", url:'assets/video/prog_index.m3u8' },
     {name: "bigBuckBunny", url: "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8"},
     {name: "appleBipbop", url: "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8"},
@@ -635,10 +641,11 @@ let hlsStreams = [
 window.hlsStreams = hlsStreams;
 
 let sceneConfig = [
-    {texture: "Floor", videoTextureSrc: "angelOne"},
-    {texture: "SmallScreen", videoTextureSrc: "local1"},
-    {texture: "BigScreen", videoTextureSrc: "bigBuckBunny"},
-    {texture: "MegaScreen", videoTextureSrc: "sampleElephantsDream"}
+    {texture: "Floor", videoTextureSrc: "apple_2"},
+    {texture: "SmallScreen", videoTextureSrc: "apple_1"},
+    {texture: "BigScreen", videoTextureSrc: "apple_4"},
+    {texture: "MegaScreen", videoTextureSrc: "apple_3"}
+
 ];
 
 const streamName = (name) => hlsStreams.find(stream => stream.name === name)?.url;
@@ -793,7 +800,7 @@ function addClub() {
     
     loader.setDRACOLoader(dracoLoader);
     
-    loader.load('assets/models/xoyo-club.glb', gltf => {
+    loader.load('assets/models/xoyo-club_v2.glb', gltf => {
         let mesh = gltf.scene
         mesh.name = "PAD"
         scene.add(mesh);
