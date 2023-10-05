@@ -648,7 +648,11 @@ let sceneConfig = [
     {texture: "StageSmall1_512", videoTextureSrc: "apple_5"},
     {texture: "StageSmall2_512", videoTextureSrc: "apple_1"},
     {texture: "StageSmall3_512", videoTextureSrc: "apple_6"},
+    {texture: "RearScreen", videoTextureSrc: "apple_1"},
+    {texture: "RearCeiling_1024", videoTextureSrc: "apple_2"},
     {texture: "MegaScreen", videoTextureSrc: "apple_6"}
+
+
 
 ];
 
