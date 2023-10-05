@@ -701,8 +701,8 @@ function setupVideoForMesh(meshName) {
     }
     
     video[meshName] = document.createElement('video');
-    video[meshName].width = 640;
-    video[meshName].height = 360;
+    video[meshName].width = 1024;
+    video[meshName].height = 512;
     video[meshName].controls = true;
     video[meshName].autoplay = false;
     video[meshName].loop = true;
@@ -775,10 +775,37 @@ function videoGui() {
         
     };
     
+    let allVideosPaused = false;  // Add this line to keep track of the state
+
+    const controlPause = {
+        pauseOrPlayAllVideos: function() {  
+            Object.keys(video).forEach(key => {
+                if (allVideosPaused) {
+                    video[key].play();
+                } else {
+                    video[key].pause();
+                }
+            });
+            allVideosPaused = !allVideosPaused;  // Toggle the state
+        },
+    };
+
+    document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 50) {  // ASCII code for key '2'
+            controlPause.pauseOrPlayAllVideos();  // Call your pause/play function
+        }
+    });
+    
 
       // Add to dat.GUI
-     gui.add(control, 'syncVideos').name('Sync/Reset Videos');
+     gui.add(control, 'syncVideos').name('Sync/Reset');
     
+     document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 49) {  // ASCII code for key '1'
+            control.syncVideos();  // Call your pause/play function
+        }
+    });
+
 
 
     sceneConfig.forEach(config => {
@@ -853,10 +880,19 @@ function videoGui() {
         }
     };
 
-
+    gui.add(controlPause, 'pauseOrPlayAllVideos').name('Pause/Play');
+    gui.add(controlPause, 'pauseOrPlayAllVideos').name('')
+    .disable();
+   
     // Add to dat.GUI
     gui.add(controlSTOP, 'stopAllVideos').name('Stop All Videos');
-    
+   
+    document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 51) {  // ASCII code for key '3'
+            controlSTOP.stopAllVideos();  // Call your pause/play function
+        }
+    });
+
 
     // Add the save function to the GUI
     gui.add(dataSaver, 'save').name('Save SceneConfig');
