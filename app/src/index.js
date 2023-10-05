@@ -576,6 +576,8 @@ function addScene() {
 }
 
 
+
+
 function initShooting() {
 
     document.addEventListener('keyup', function(event) {
@@ -688,6 +690,9 @@ let hls = {};
 
 function setupVideoForMesh(meshName) {
 
+
+    let previousVideoSrc = null; 
+
     const stream = streamName(sceneConfig.find(conf => conf.texture === meshName).videoTextureSrc);
     
     if (!stream) {
@@ -699,7 +704,7 @@ function setupVideoForMesh(meshName) {
     video[meshName].width = 640;
     video[meshName].height = 360;
     video[meshName].controls = true;
-    video[meshName].autoplay = true;
+    video[meshName].autoplay = false;
     video[meshName].loop = true;
     document.body.appendChild(video[meshName]);
     
@@ -715,12 +720,14 @@ function setupVideoForMesh(meshName) {
     
     videoTexture[meshName] = new THREE.VideoTexture(video[meshName]);
     videoMaterial[meshName] = new THREE.MeshBasicMaterial({ map: videoTexture[meshName], side: THREE.DoubleSide });
-    video[meshName].addEventListener('play', () => {
-        document.removeEventListener('click', tryPlayVideo);
-        document.removeEventListener('touchstart', tryPlayVideo);
-        document.removeEventListener('keydown', tryPlayVideo);
-    });
+ //   video[meshName].addEventListener('play', () => {
+   //     document.removeEventListener('click', tryPlayVideo);
+     //   document.removeEventListener('touchstart', tryPlayVideo);
+       // document.removeEventListener('keydown', tryPlayVideo);
+  //  });
     
+
+    /*
     function tryPlayVideo() {
         if (video[meshName].paused) video[meshName].play().catch(error => console.error('Video play failed:', error));
     }
@@ -728,7 +735,7 @@ function setupVideoForMesh(meshName) {
     document.addEventListener('click', tryPlayVideo);
     document.addEventListener('touchstart', tryPlayVideo);
     document.addEventListener('keydown', tryPlayVideo);
-
+*/
 }
 
 
@@ -740,12 +747,39 @@ function videoGui() {
     document.body.appendChild(gui.domElement);
 
     gui.domElement.style.position = 'fixed';
-    gui.domElement.style.bottom = '0px';
-    gui.domElement.style.right = '0px';
+    gui.domElement.style.top = '0px';
+    gui.domElement.style.left = '0px';
     const guiState = {};
     hlsStreams.forEach(stream => {
         guiState[stream.name] = stream.url;
     });
+
+    const control = {
+        syncVideos: function () {
+            Object.keys(video).forEach(key => {
+                video[key].currentTime = 0;
+               video[key].play();  // Uncomment this if you want it to autoplay after resetting
+            });
+        } 
+    };
+      
+    let previousVideoSrc = null; 
+
+    const controlSTOP = {
+        stopAllVideos: function() {
+            Object.keys(video).forEach(key => {
+                video[key].pause();
+                video[key].currentTime = 0;  // Optional, if you want to also reset the video time
+            });
+        },
+        
+    };
+    
+
+      // Add to dat.GUI
+     gui.add(control, 'syncVideos').name('Sync/Reset Videos');
+    
+
 
     sceneConfig.forEach(config => {
 
@@ -753,9 +787,21 @@ function videoGui() {
 
         gui.add(guiState, config.texture, Object.keys(guiState))
 
-            .onChange(function(newValue) {
+        .onChange(function(newValue) {
                 
-                console.log("Selected texture:", config.texture, "Selected video:", newValue);
+             // Debug log to print the value of previousVideoSrc
+    previousVideoSrc = sceneConfig.find(conf => conf.texture === config.texture).videoTextureSrc;
+    console.log("Previous video source: ", previousVideoSrc);
+
+    // Debug log to print all keys in video object
+    console.log("All keys in video object: ", Object.keys(video));
+                
+    if (video[previousVideoSrc]) {
+        console.log(`Pausing video: ${previousVideoSrc}`);
+        video[previousVideoSrc].pause();
+    }
+
+        
                 
                 // Update the videoTextureSrc in the sceneConfig
                 let configItem = sceneConfig.find(conf => conf.texture === config.texture);
@@ -765,6 +811,15 @@ function videoGui() {
                 // Setup the new video for the mesh
                 setupVideoForMesh(config.texture);
                 // Get the GLTF object from the scene
+
+
+                // Play the newly selected video for this mesh
+                if (video[newValue]) {
+                    video[newValue].play();
+                      }
+                        console.log("Selected texture:", config.texture, "Selected video:", newValue);
+                        
+
 
                 let gltf = scene.getObjectByName("PAD");
                 if (gltf) {
@@ -777,24 +832,12 @@ function videoGui() {
                     console.warn("Couldn't find 'PAD' object in the scene.");
                 }
 
+                
+
+
             });
 
     });
-
-    const control = {
-        syncVideos: function () {
-          Object.keys(video).forEach(meshName => {
-            if (video[meshName]) {
-              video[meshName].currentTime = 0;
-              video[meshName].play();
-            }
-          });
-        },
-      };
-      
-      // Add to dat.GUI
-      gui.add(control, 'syncVideos').name('Sync/Reset Videos');
-      
 
 
     // The dummy object and save function
@@ -809,6 +852,11 @@ function videoGui() {
             a.click();
         }
     };
+
+
+    // Add to dat.GUI
+    gui.add(controlSTOP, 'stopAllVideos').name('Stop All Videos');
+    
 
     // Add the save function to the GUI
     gui.add(dataSaver, 'save').name('Save SceneConfig');
