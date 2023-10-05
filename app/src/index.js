@@ -503,7 +503,6 @@ function addScene() {
   renderer.xr.enabled = true;
 
 
-
   renderer.xr.addEventListener('sessionstart', onXRSessionStart);
   renderer.xr.addEventListener('sessionend', onXRSessionEnd);
 
@@ -574,10 +573,7 @@ function addScene() {
 
     document.getElementById("myStats").setAttribute("style", "position: fixed; bottom: 0px; left: 0px; cursor: pointer; opacity: 0.9; z-index: 10000;")
 
-
-
 }
-
 
 
 function initShooting() {
@@ -735,7 +731,10 @@ function setupVideoForMesh(meshName) {
 
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e5761f2c9c99355d5ffa1e3a4de5e86f0b457ef9
 function videoGui() {
 
     const gui = new GUI({ autoPlace: false });
@@ -869,8 +868,6 @@ function videoGuiLoader() {
 }
 
 
-
-
 function updateVideos() {
     for (let configItem of sceneConfig) {
         let meshName = configItem.texture;
@@ -901,8 +898,6 @@ function updateStats() {
     }
 
 }
-
-
 
 
 /* Scene */
@@ -938,9 +933,6 @@ function initScene() {
 
 
 }
-
-
-
 
 
 // gltf.scene.traverse(node => {
@@ -1039,7 +1031,6 @@ function addClub() {
 
 
 
-
 import('@dimforge/rapier3d').then(rapierModule => {
 
     //console.log("init rapierModule")
@@ -1096,8 +1087,6 @@ function updateMixer() {
     }
 
 }
-
-
 
 
 function addRapierGround() {
@@ -1407,9 +1396,6 @@ window.shootBall = shootBall;
 
 
 
-
-
-
 // function dropSomething() {
 //   if(Math.random()*1 > 0.3) {
 //     shootBallFromTop()
@@ -1529,8 +1515,6 @@ function restoreCameraPosition() {
 }
 window.restoreCameraPosition = restoreCameraPosition;
   
-
-
 
 
 function debounce(func, wait) {
